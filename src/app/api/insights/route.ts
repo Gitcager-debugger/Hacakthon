@@ -10,10 +10,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      // Create demo user if missing so insights can be generated
+      user = await db.user.create({
+        data: {
+          email: 'demo@mindflow.app',
+          name: 'Demo User',
+          hashedPassword: 'demo',
+        },
+      });
     }
 
     const { searchParams } = new URL(request.url);
@@ -122,10 +126,11 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('Insights error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const body =
+      process.env.NODE_ENV === 'development'
+        ? { error: 'Internal server error', message: (error as Error)?.message, stack: (error as Error)?.stack }
+        : { error: 'Internal server error' };
+    return NextResponse.json(body, { status: 500 });
   }
 }
 

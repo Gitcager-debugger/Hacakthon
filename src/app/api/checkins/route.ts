@@ -60,10 +60,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ checkIn }, { status: 201 });
   } catch (error) {
     console.error('Check-in error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const body =
+      process.env.NODE_ENV === 'development'
+        ? { error: 'Internal server error', message: (error as Error)?.message, stack: (error as Error)?.stack }
+        : { error: 'Internal server error' };
+    return NextResponse.json(body, { status: 500 });
   }
 }
 

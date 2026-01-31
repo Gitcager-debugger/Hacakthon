@@ -9,10 +9,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      // Create demo user if missing to keep behavior consistent with other routes
+      user = await db.user.create({
+        data: {
+          email: 'demo@mindflow.app',
+          name: 'Demo User',
+          hashedPassword: 'demo',
+        },
+      });
     }
 
     // Get all check-ins for this user
@@ -53,9 +57,10 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Export error:', error);
-    return NextResponse.json(
-      { error: 'Failed to export data' },
-      { status: 500 }
-    );
+    const body =
+      process.env.NODE_ENV === 'development'
+        ? { error: 'Failed to export data', message: (error as Error)?.message, stack: (error as Error)?.stack }
+        : { error: 'Failed to export data' };
+    return NextResponse.json(body, { status: 500 });
   }
 }

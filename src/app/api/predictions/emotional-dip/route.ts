@@ -22,10 +22,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      // Create demo user if missing so predictions can run for demo
+      user = await db.user.create({
+        data: {
+          email: 'demo@mindflow.app',
+          name: 'Demo User',
+          hashedPassword: 'demo',
+        },
+      });
     }
 
     // Get recent check-ins for the user (last 30 days)
@@ -74,10 +78,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(prediction);
   } catch (error) {
     console.error('Prediction error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const body =
+      process.env.NODE_ENV === 'development'
+        ? { error: 'Internal server error', message: (error as Error)?.message, stack: (error as Error)?.stack }
+        : { error: 'Internal server error' };
+    return NextResponse.json(body, { status: 500 });
   }
 }
 
