@@ -38,32 +38,130 @@ export function EmotionalDipPredictor() {
 
   const fetchPrediction = async () => {
     try {
-      const token = localStorage.getItem('mindflow-auth-storage');
-      const authData = token ? JSON.parse(token) : null;
-      const authToken = authData?.state?.token;
+      // Fetch check-in data first to analyze patterns
+      const checkInsResponse = await fetch('/api/checkins?days=30');
+      if (!checkInsResponse.ok) {
+        throw new Error('Failed to fetch check-in data');
+      }
+      
+      const checkInsData = await checkInsResponse.json();
+      const checkIns = checkInsData.checkIns;
 
-      if (!authToken) {
-        setError('Please log in to see predictions');
+      if (checkIns.length < 5) {
+        setError('Need at least 5 check-ins for predictions');
         setLoading(false);
         return;
       }
 
-      const response = await fetch('/api/predictions/emotional-dip', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-      });
+      // Simple rule-based prediction (can be enhanced with AI later)
+      const analyzePatterns = () => {
+        const moods = checkIns.map((c: any) => c.mood);
+        const energies = checkIns.map((c: any) => c.energyLevel);
+        const sleepHours = checkIns.map((c: any) => c.sleepHours).filter(Boolean);
+        
+        // Calculate averages
+        const avgMood = moods.reduce((a: number, b: number) => a + b, 0) / moods.length;
+        const avgEnergy = energies.reduce((a: number, b: number) => a + b, 0) / energies.length;
+        const avgSleep = sleepHours.length > 0 
+          ? sleepHours.reduce((a: number, b: number) => a + b, 0) / sleepHours.length 
+          : 0;
+        
+        // Calculate recent trend (last 5 vs previous 5)
+        const recentMoods = moods.slice(0, Math.min(5, moods.length));
+        const olderMoods = moods.slice(Math.min(5, moods.length), Math.min(10, moods.length));
+        const moodTrend = recentMoods.length > 0 && olderMoods.length > 0
+          ? (recentMoods.reduce((a: number, b: number) => a + b, 0) / recentMoods.length) - 
+            (olderMoods.reduce((a: number, b: number) => a + b, 0) / olderMoods.length)
+          : 0;
+        
+        // Risk calculation
+        let riskScore = 0;
+        let riskLevel: 'low' | 'medium' | 'high' = 'low';
+        
+        // Low mood factor (40% weight)
+        if (avgMood < 2.5) riskScore += 40;
+        else if (avgMood < 3.5) riskScore += 20;
+        
+        // Mood trend factor (20% weight)
+        if (moodTrend < -0.5) riskScore += 20;
+        else if (moodTrend < 0) riskScore += 10;
+        
+        // Sleep factor (15% weight)
+        if (avgSleep < 6) riskScore += 15;
+        else if (avgSleep < 7) riskScore += 7;
+        
+        // Energy factor (10% weight)
+        if (avgEnergy < 2.5) riskScore += 10;
+        else if (avgEnergy < 3.5) riskScore += 5;
+        
+        // Determine risk level
+        if (riskScore >= 50) riskLevel = 'high';
+        else if (riskScore >= 25) riskLevel = 'medium';
+        
+        // Simple prediction of next challenging day
+        const dayOfWeekPatterns: Record<number, number> = {};
+        checkIns.forEach((checkIn: any) => {
+          const day = new Date(checkIn.createdAt).getDay();
+          if (!dayOfWeekPatterns[day]) dayOfWeekPatterns[day] = 0;
+          if (checkIn.mood <= 2) dayOfWeekPatterns[day] += 1;
+        });
+        
+        let predictedDipDate = null;
+        if (riskLevel !== 'low' && Object.keys(dayOfWeekPatterns).length > 0) {
+          const worstDay = Object.entries(dayOfWeekPatterns)
+            .sort(([,a], [,b]) => b - a)[0][0];
+          const nextWorstDay = new Date();
+          const currentDay = nextWorstDay.getDay();
+          const daysUntil = (parseInt(worstDay) + 7 - currentDay) % 7 || 7;
+          nextWorstDay.setDate(nextWorstDay.getDate() + daysUntil);
+          predictedDipDate = nextWorstDay.toISOString().split('T')[0];
+        }
+        
+        // Generate simple AI-like insights
+        const generateInsight = () => {
+          if (riskLevel === 'high') {
+            return "You've been experiencing some challenging days recently. Remember that difficult periods are temporary and you're taking positive steps by tracking your wellbeing. Consider reaching out to someone you trust or trying some calming activities.";
+          } else if (riskLevel === 'medium') {
+            return "Your mood patterns show some ups and downs, which is completely normal. You're doing well to stay aware of your emotional state. Keep up the daily check-ins to maintain this self-awareness.";
+          } else {
+            return "Great job maintaining your emotional wellbeing! Your consistent check-ins show strong self-awareness. Keep up the positive habits that are working well for you.";
+          }
+        };
+        
+        const data = {
+          riskLevel,
+          confidence: Math.min(0.3 + (checkIns.length * 0.05), 0.95),
+          predictedDipDate,
+          factors: [
+            {
+              factor: 'Mood Patterns',
+              impact: moodTrend < 0 ? 'negative' : 'positive',
+              description: `Average mood: ${avgMood.toFixed(1)}/5`
+            },
+            {
+              factor: 'Sleep Quality',
+              impact: avgSleep < 6 ? 'negative' : 'positive',
+              description: `Average sleep: ${avgSleep.toFixed(1)} hours`
+            }
+          ],
+          recommendations: [
+            'Continue daily check-ins for better insights',
+            'Maintain consistent sleep schedule',
+            'Try calm tools when feeling stressed',
+            'Reach out to friends when needed'
+          ],
+          aiInsight: generateInsight()
+        };
+        
+        return data;
+      };
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch prediction');
-      }
-
-      const data = await response.json();
-      setPrediction(data);
+      const predictionData = analyzePatterns();
+      setPrediction(predictionData as PredictionData);
       setError(null);
     } catch (err) {
-      console.error('Prediction fetch error:', err);
-      setError('Unable to load prediction. Please try again.');
+      console.error('Prediction analysis error:', err);
+      setError('Unable to analyze your data. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);

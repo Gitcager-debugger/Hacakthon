@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LineChart } from '@/components/mood-trend-chart';
 import { EmotionalDipPredictor } from '@/components/emotional-dip-predictor';
-import { TrendingUp, TrendingDown, Moon, Zap, AlertCircle, CheckCircle2, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Moon, Zap, AlertCircle, CheckCircle2, Calendar, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 
 const timePeriods = [
@@ -18,6 +19,114 @@ const timePeriods = [
 
 export default function InsightsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('7D');
+  const [checkIns, setCheckIns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCheckIns();
+  }, [selectedPeriod]);
+
+  const fetchCheckIns = async () => {
+    try {
+      setLoading(true);
+      const days = selectedPeriod === '7D' ? 7 : selectedPeriod === '30D' ? 30 : 90;
+      const response = await fetch(`/api/checkins?days=${days}`);
+      
+      if (!response.ok) throw new Error('Failed to fetch data');
+      
+      const data = await response.json();
+      setCheckIns(data.checkIns);
+    } catch (error) {
+      console.error('Error fetching check-ins:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your data',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportData = async () => {
+    try {
+      const response = await fetch('/api/checkins/export');
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mindflow-data-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: 'Data exported!',
+        description: 'Your check-in data has been downloaded',
+      });
+    } catch (error) {
+      toast({
+        title: 'Export failed',
+        description: 'Unable to export your data',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Calculate statistics
+  const calculateStats = () => {
+    if (checkIns.length === 0) return null;
+    
+    const moods = checkIns.map(c => c.mood);
+    const energies = checkIns.map(c => c.energyLevel);
+    const sleepHours = checkIns.map(c => c.sleepHours).filter(Boolean);
+    
+    const avgMood = moods.reduce((a, b) => a + b, 0) / moods.length;
+    const avgEnergy = energies.reduce((a, b) => a + b, 0) / energies.length;
+    const avgSleep = sleepHours.length > 0 ? sleepHours.reduce((a, b) => a + b, 0) / sleepHours.length : 0;
+    
+    // Calculate trends
+    const recentMoods = moods.slice(0, Math.min(3, moods.length));
+    const olderMoods = moods.slice(Math.min(3, moods.length), Math.min(6, moods.length));
+    const moodTrend = recentMoods.length > 0 && olderMoods.length > 0 
+      ? (recentMoods.reduce((a, b) => a + b, 0) / recentMoods.length) - (olderMoods.reduce((a, b) => a + b, 0) / olderMoods.length)
+      : 0;
+    
+    return {
+      avgMood: avgMood.toFixed(1),
+      avgEnergy: avgEnergy.toFixed(1),
+      avgSleep: avgSleep.toFixed(1),
+      moodTrend,
+      totalCheckIns: checkIns.length,
+      moodTrendUp: moodTrend > 0
+    };
+  };
+
+  const stats = calculateStats();
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-6">
+          <div className="max-w-lg mx-auto px-4 pt-8">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-muted rounded w-1/3"></div>
+              <div className="h-32 bg-muted rounded"></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-24 bg-muted rounded"></div>
+                <div className="h-24 bg-muted rounded"></div>
+                <div className="h-24 bg-muted rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -50,46 +159,81 @@ export default function InsightsPage() {
         </div>
 
         <div className="max-w-lg mx-auto px-4 space-y-4 mt-4">
+          {/* Header with Export */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-medium text-foreground">Your Data</h2>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportData}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
+          </div>
+
           {/* Mood Trend Chart */}
           <Card className="border-2 shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Mood Trend</CardTitle>
-                <div className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="font-medium">Trending up</span>
-                </div>
+                {stats && (
+                  <div className={cn(
+                    'flex items-center gap-1 text-sm px-2 py-1 rounded-full',
+                    stats.moodTrendUp 
+                      ? 'text-green-600 bg-green-50' 
+                      : 'text-red-600 bg-red-50'
+                  )}>
+                    {stats.moodTrendUp ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    <span className="font-medium">
+                      {stats.moodTrendUp ? 'Trending up' : 'Trending down' }
+                    </span>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
-              <LineChart />
+              <LineChart data={checkIns} />
             </CardContent>
           </Card>
 
           {/* Quick Stats Row */}
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard
-              icon="😊"
-              value="4.2"
-              label="Avg Mood"
-              trend="+0.3"
-              trendUp
-            />
-            <StatCard
-              icon={<Moon className="w-4 h-4 text-blue-500" />}
-              value="6.8h"
-              label="Avg Sleep"
-              trend="+0.5h"
-              trendUp
-            />
-            <StatCard
-              icon={<Zap className="w-4 h-4 text-energy-high" />}
-              value="3.5"
-              label="Avg Energy"
-              trend="+0.2"
-              trendUp
-            />
-          </div>
+          {stats ? (
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard
+                icon="😊"
+                value={stats.avgMood}
+                label="Avg Mood"
+                trend={stats.moodTrend > 0 ? `+${stats.moodTrend.toFixed(1)}` : stats.moodTrend.toFixed(1)}
+                trendUp={stats.moodTrend > 0}
+              />
+              <StatCard
+                icon={<Moon className="w-4 h-4 text-blue-500" />}
+                value={`${stats.avgSleep}h`}
+                label="Avg Sleep"
+                trend=""
+                trendUp={true}
+              />
+              <StatCard
+                icon={<Zap className="w-4 h-4 text-energy-high" />}
+                value={stats.avgEnergy}
+                label="Avg Energy"
+                trend=""
+                trendUp={true}
+              />
+            </div>
+          ) : (
+            <Card className="border-2 shadow-sm">
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">No data available yet. Start tracking your mood to see insights!</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* AI Emotional Dip Predictor */}
           <EmotionalDipPredictor />
