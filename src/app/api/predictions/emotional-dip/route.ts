@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-import ZAI from 'z-ai-web-dev-sdk';
-
 interface PredictionResult {
   riskLevel: 'low' | 'medium' | 'high';
   confidence: number;
@@ -18,20 +16,15 @@ interface PredictionResult {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = extractTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Get demo user
+    let user = await db.user.findUnique({
+      where: { email: 'demo@mindflow.app' },
+    });
 
-    const payload = verifyToken(token);
-    if (!payload) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
@@ -41,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const checkIns = await db.checkIn.findMany({
       where: {
-        userId: payload.userId,
+        userId: user.id,
         createdAt: {
           gte: thirtyDaysAgo,
         },
@@ -76,39 +69,9 @@ export async function GET(request: NextRequest) {
     // Analyze patterns from check-ins
     const analysis = analyzePatterns(checkIns);
 
-    // Use AI to generate insights and predictions
-    const aiService = await ZAI.create();
-
-    const prompt = buildAnalysisPrompt(analysis);
-
-    try {
-      const aiResponse = await aiService.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an empathetic emotional wellness AI assistant. Analyze mood patterns and provide gentle, supportive insights without making medical diagnoses. Keep responses concise and actionable.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
-
-      const aiInsight = aiResponse.choices?.[0]?.message?.content || 
-        'Based on your patterns, continue maintaining healthy habits like good sleep and regular check-ins.';
-
-      // Parse AI response for structured data
-      const prediction = generatePrediction(analysis, aiInsight);
-
-      return NextResponse.json(prediction);
-    } catch (aiError) {
-      console.error('AI prediction error:', aiError);
-      
-      // Fallback to rule-based prediction if AI fails
-      const fallbackPrediction = generateRuleBasedPrediction(analysis);
-      return NextResponse.json(fallbackPrediction);
-    }
+    // Use rule-based prediction instead of AI
+    const prediction = generateRuleBasedPrediction(analysis);
+    return NextResponse.json(prediction);
   } catch (error) {
     console.error('Prediction error:', error);
     return NextResponse.json(

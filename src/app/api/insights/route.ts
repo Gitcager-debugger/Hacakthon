@@ -4,21 +4,15 @@ import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = extractTokenFromRequest(request);
+    // Get demo user
+    let user = await db.user.findUnique({
+      where: { email: 'demo@mindflow.app' },
+    });
 
-    if (!token) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
@@ -28,7 +22,7 @@ export async function GET(request: NextRequest) {
     // Get check-ins for the specified period
     const checkIns = await db.checkIn.findMany({
       where: {
-        userId: payload.userId,
+        userId: user.id,
         createdAt: {
           gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
         },
