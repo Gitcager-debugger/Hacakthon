@@ -4,6 +4,7 @@ import { generateToken } from '@/lib/auth';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: NextRequest) {
+  console.log('Login API called');
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -50,8 +51,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
