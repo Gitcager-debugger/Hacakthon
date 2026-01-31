@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/store/auth-store';
+
 import { LogOut, Settings, Download, Trash2, Calendar, Flame } from 'lucide-react';
 import Link from 'next/link';
 
@@ -18,33 +18,47 @@ interface User {
 }
 
 export default function ProfilePage() {
-  const { user: authUser, token, logout } = useAuthStore();
-  const [user, setUser] = useState<User | null>(authUser);
+  const [user, setUser] = useState<User | null>(null);
   const [checkInCount, setCheckInCount] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!token) {
-      return;
-    }
-
     // Fetch user stats
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch('/api/checkins?days=30');
 
         if (response.ok) {
           const data = await response.json();
-          setUser(data.user);
-          setCheckInCount(data.checkInCount || 0);
-          setCurrentStreak(data.currentStreak || 0);
-          setLongestStreak(data.longestStreak || 0);
+          setUser({
+            id: 'demo',
+            email: 'demo@mindflow.app',
+            name: 'Demo User',
+          });
+          setCheckInCount(data.checkIns.length);
+          
+          // Calculate streaks
+          const checkIns = data.checkIns;
+          if (checkIns.length > 0) {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            let current = 0;
+            let longest = 0;
+            let streak = 0;
+            
+            // Simple streak calculation
+            for (let i = 0; i < Math.min(7, checkIns.length); i++) {
+              streak++;
+              if (streak > longest) longest = streak;
+            }
+            
+            setCurrentStreak(streak);
+            setLongestStreak(longest);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch user:', error);
@@ -52,15 +66,14 @@ export default function ProfilePage() {
     };
 
     fetchStats();
-  }, [token]);
+  }, []);
 
   const handleLogout = () => {
-    logout();
     toast({
       title: 'See you soon! 👋',
-      description: 'You have been logged out',
+      description: 'Session ended',
     });
-    window.location.href = '/login';
+    window.location.href = '/';
   };
 
   const getInitials = (name: string | null, email: string) => {
@@ -77,11 +90,7 @@ export default function ProfilePage() {
 
   const handleExportData = async () => {
     try {
-      const response = await fetch('/api/checkins/export', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('/api/checkins/export');
 
       if (!response.ok) throw new Error('Failed to export data');
 
@@ -115,21 +124,12 @@ export default function ProfilePage() {
     }
 
     try {
-      const response = await fetch('/api/auth/delete-account', {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to delete account');
-
-      logout();
+      // Simulate account deletion
       toast({
-        title: 'Account deleted',
-        description: 'Your account has been permanently deleted',
+        title: 'Account would be deleted',
+        description: 'In a real app, this would delete your account',
       });
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error) {
       toast({
         title: 'Deletion failed',
