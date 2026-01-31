@@ -52,8 +52,10 @@ export default function LoginPage() {
         description: 'You are now logged in',
       });
 
-      // Redirect to home
-      window.location.href = '/';
+      // Redirect to home after a short delay
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     } catch (error) {
       toast({
         title: 'Login failed',
