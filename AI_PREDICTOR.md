@@ -24,7 +24,7 @@ The system calculates various metrics:
 - **Day-of-Week Patterns**: Identifies worst/most challenging days
 
 ### 3. AI-Powered Insights
-Using the `z-ai-web-dev-sdk`'s LLM service, the system:
+Using the LLM service, the system:
 - Analyzes patterns in the data
 - Generates empathetic, supportive insights
 - Provides personalized recommendations
@@ -166,7 +166,7 @@ confidence = min(0.3 + (checkInCount * 0.05), 0.95)
 - **Integration**: `src/app/insights/page.tsx`
 
 ### Dependencies
-- `z-ai-web-dev-sdk`: AI insights generation
+- AI service: Insights generation
 - `prisma`: Data persistence
 - `lucide-react`: Icons
 

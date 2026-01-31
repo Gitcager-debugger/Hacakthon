@@ -19,12 +19,12 @@ export const metadata: Metadata = {
   keywords: ["MindFlow", "emotional wellness", "mood tracking", "mental health", "wellbeing", "self-care", "stress management"],
   authors: [{ name: "MindFlow Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/favicon.ico",
   },
   openGraph: {
     title: "MindFlow - Track Your Emotional Journey",
     description: "Gentle mood and wellness tracking for students and young professionals",
-    url: "https://chat.z.ai",
+    url: "https://mindflow.app",
     siteName: "MindFlow",
     type: "website",
   },
