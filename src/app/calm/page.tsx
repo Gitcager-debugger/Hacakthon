@@ -4,7 +4,7 @@ import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Wind, PenTool, Heart, Clock } from 'lucide-react';
-import { ProtectedRoute } from '@/components/protected-route';
+
 
 const calmTools = [
   {
@@ -45,8 +45,7 @@ const recentTools = [
 
 export default function CalmPage() {
   return (
-    <ProtectedRoute>
-      <AppLayout>
+    <AppLayout>
       <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-6">
         {/* Header */}
         <div className="bg-white border-b border-border p-6">
@@ -147,6 +146,5 @@ export default function CalmPage() {
         </div>
       </div>
     </AppLayout>
-    </ProtectedRoute>
   );
 }

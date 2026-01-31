@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import { LogOut, Settings, Download, Trash2, Calendar, Flame } from 'lucide-react';
 import Link from 'next/link';
-import { ProtectedRoute } from '@/components/protected-route';
+
 
 interface User {
   id: string;
@@ -140,8 +140,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <ProtectedRoute>
-      <AppLayout>
+    <AppLayout>
       <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-6">
         {/* Header */}
         <div className="bg-white border-b border-border p-6">
@@ -265,7 +264,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </AppLayout>
-    </ProtectedRoute>
   );
 }
 

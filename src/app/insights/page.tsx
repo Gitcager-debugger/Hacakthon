@@ -8,7 +8,7 @@ import { LineChart } from '@/components/mood-trend-chart';
 import { EmotionalDipPredictor } from '@/components/emotional-dip-predictor';
 import { TrendingUp, TrendingDown, Moon, Zap, AlertCircle, CheckCircle2, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ProtectedRoute } from '@/components/protected-route';
+
 
 const timePeriods = [
   { value: '7D', label: '7 Days' },
@@ -20,8 +20,7 @@ export default function InsightsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('7D');
 
   return (
-    <ProtectedRoute>
-      <AppLayout>
+    <AppLayout>
       <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pb-6">
         {/* Header */}
         <div className="bg-white border-b border-border p-6">
@@ -188,7 +187,6 @@ export default function InsightsPage() {
         </div>
       </div>
     </AppLayout>
-    </ProtectedRoute>
   );
 }
 
