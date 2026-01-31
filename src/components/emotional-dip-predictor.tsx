@@ -106,7 +106,7 @@ export function EmotionalDipPredictor() {
           if (checkIn.mood <= 2) dayOfWeekPatterns[day] += 1;
         });
         
-        let predictedDipDate = null;
+        let predictedDipDate: string | null = null;
         if (riskLevel !== 'low' && Object.keys(dayOfWeekPatterns).length > 0) {
           const worstDay = Object.entries(dayOfWeekPatterns)
             .sort(([,a], [,b]) => b - a)[0][0];
