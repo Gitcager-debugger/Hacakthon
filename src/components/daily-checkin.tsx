@@ -50,7 +50,7 @@ export function DailyCheckin() {
 
     try {
       // TODO: Replace with actual API call
-      const response = await fetch('/api/checkin', {
+      const response = await fetch('/api/checkins', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -293,7 +293,6 @@ export function DailyCheckin() {
                 onChange={(e) => setJournalNote(e.target.value.slice(0, 140))}
                 placeholder="What's on your mind?"
                 className="min-h-[100px] resize-none"
-                maxLength={140}
               />
               <p className="text-xs text-muted-foreground mt-2 text-right">
                 {journalNote.length}/140
