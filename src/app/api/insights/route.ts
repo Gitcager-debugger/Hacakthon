@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { devLog } from '@/lib/dev-logger';
 
 
 export async function GET(request: NextRequest) {
   try {
+    devLog(`GET /api/insights url=${request.url}`);
     // Get demo user
     let user = await db.user.findUnique({
       where: { email: 'demo@mindflow.app' },
@@ -126,6 +128,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error('Insights error:', error);
+    devLog(`ERROR GET /api/insights ${(error as Error)?.message} ${(error as Error)?.stack}`);
     const body =
       process.env.NODE_ENV === 'development'
         ? { error: 'Internal server error', message: (error as Error)?.message, stack: (error as Error)?.stack }

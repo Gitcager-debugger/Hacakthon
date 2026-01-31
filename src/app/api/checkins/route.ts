@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { devLog } from '@/lib/dev-logger';
 
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    devLog(`POST /api/checkins body=${JSON.stringify(body)}`);
     const { mood, energyLevel, sleepHours, socialBattery, journalNote } = body;
 
     if (!mood || !energyLevel) {
@@ -60,6 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ checkIn }, { status: 201 });
   } catch (error) {
     console.error('Check-in error:', error);
+    devLog(`ERROR POST /api/checkins ${(error as Error)?.message} ${(error as Error)?.stack}`);
     const body =
       process.env.NODE_ENV === 'development'
         ? { error: 'Internal server error', message: (error as Error)?.message, stack: (error as Error)?.stack }
@@ -70,6 +73,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    devLog(`GET /api/checkins url=${request.url}`);
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get('days') || '7');
 
@@ -104,9 +108,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ checkIns }, { status: 200 });
   } catch (error) {
     console.error('Get check-ins error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    devLog(`ERROR GET /api/checkins ${(error as Error)?.message} ${(error as Error)?.stack}`);
+    const body =
+      process.env.NODE_ENV === 'development'
+        ? { error: 'Internal server error', message: (error as Error)?.message, stack: (error as Error)?.stack }
+        : { error: 'Internal server error' };
+    return NextResponse.json(body, { status: 500 });
   }
 }

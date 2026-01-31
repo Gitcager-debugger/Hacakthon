@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import DevErrorBoundary from '@/components/DevErrorBoundary';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +20,8 @@ export const metadata: Metadata = {
   keywords: ["MindFlow", "emotional wellness", "mood tracking", "mental health", "wellbeing", "self-care", "stress management"],
   authors: [{ name: "MindFlow Team" }],
   icons: {
-    icon: "/favicon.ico",
+    // default favicon path; if missing, fall back to bundled logo
+    icon: "/logo.svg",
   },
   openGraph: {
     title: "MindFlow - Track Your Emotional Journey",
@@ -45,8 +47,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
-        <Toaster />
+            {process.env.NODE_ENV === 'development' ? (
+              <DevErrorBoundary>
+                {children}
+                <Toaster />
+              </DevErrorBoundary>
+            ) : (
+              <>
+                {children}
+                <Toaster />
+              </>
+            )}
       </body>
     </html>
   );

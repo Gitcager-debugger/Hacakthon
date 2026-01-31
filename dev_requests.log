@@ -1,0 +1,5 @@
+[2026-01-31T10:42:25.150Z] POST /api/checkins body={"mood":5,"energyLevel":4,"sleepHours":8,"socialBattery":"full","journalNote":"dev logger test"}
+[2026-01-31T10:45:28.876Z] CLIENT_ERROR {"error":"test client error","stack":"stacktrace","info":{"component":"DailyCheckin"}}
+[2026-01-31T10:47:28.723Z] POST /api/checkins body={"foo":"bar"}
+[2026-01-31T10:47:38.041Z] POST /api/checkins body={"foo":"bar"}
+[2026-01-31T10:49:08.810Z] POST /api/checkins body={"foo":"bar"}

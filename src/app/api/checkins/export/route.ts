@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { devLog } from '@/lib/dev-logger';
 
 export async function GET(request: NextRequest) {
   try {
+    devLog(`GET /api/checkins/export url=${request.url}`);
     // Get demo user
     let user = await db.user.findUnique({
       where: { email: 'demo@mindflow.app' },
@@ -57,6 +59,7 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Export error:', error);
+    devLog(`ERROR GET /api/checkins/export ${(error as Error)?.message} ${(error as Error)?.stack}`);
     const body =
       process.env.NODE_ENV === 'development'
         ? { error: 'Failed to export data', message: (error as Error)?.message, stack: (error as Error)?.stack }
