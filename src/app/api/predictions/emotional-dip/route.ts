@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifyToken, extractTokenFromRequest } from '@/lib/auth';
+
 import ZAI from 'z-ai-web-dev-sdk';
 
 interface PredictionResult {

@@ -1,27 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifyToken, extractTokenFromRequest } from '@/lib/auth';
+
 
 export async function POST(request: NextRequest) {
   try {
-    const token = extractTokenFromRequest(request);
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { mood, energyLevel, sleepHours, socialBattery, journalNote } = body;
 
@@ -48,10 +30,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get or create demo user
+    let user = await db.user.findUnique({
+      where: { email: 'demo@mindflow.app' },
+    });
+
+    if (!user) {
+      user = await db.user.create({
+        data: {
+          email: 'demo@mindflow.app',
+          name: 'Demo User',
+          hashedPassword: 'demo', // Not used but required
+        },
+      });
+    }
+
     // Create check-in
     const checkIn = await db.checkIn.create({
       data: {
-        userId: payload.userId,
+        userId: user.id,
         mood,
         energyLevel,
         sleepHours: sleepHours || null,
@@ -72,31 +69,28 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = extractTokenFromRequest(request);
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get('days') || '7');
+
+    // Get or create demo user
+    let user = await db.user.findUnique({
+      where: { email: 'demo@mindflow.app' },
+    });
+
+    if (!user) {
+      user = await db.user.create({
+        data: {
+          email: 'demo@mindflow.app',
+          name: 'Demo User',
+          hashedPassword: 'demo', // Not used but required
+        },
+      });
+    }
 
     // Get check-ins for the specified period
     const checkIns = await db.checkIn.findMany({
       where: {
-        userId: payload.userId,
+        userId: user.id,
         createdAt: {
           gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
         },
