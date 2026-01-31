@@ -20,25 +20,24 @@ async function main() {
   console.log('✅ Demo user created:', demoUser.email);
 
   // Create sample check-ins for the last 7 days
-  const checkInData = [];
   const today = new Date();
+
+  const checkInData: Array<{
+    userId: string;
+    mood: number;
+    energyLevel: number;
+    sleepHours: number;
+    socialBattery: string;
+    journalNote: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
 
   for (let i = 0; i < 7; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     date.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
 
-    const checkInData: Array<{
-      userId: string;
-      mood: number;
-      energyLevel: number;
-      sleepHours: number;
-      socialBattery: string;
-      journalNote: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }> = [];
-    
     // Generate realistic mood data (slightly improving trend)
     const baseMood = 3.5 + (i * 0.15); // Improving trend
     const mood = Math.min(5, Math.max(1, Math.round(baseMood + (Math.random() - 0.5))));
