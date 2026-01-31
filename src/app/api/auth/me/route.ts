@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { verifyToken, extractTokenFromRequest } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
+  console.log('Me API called');
   try {
     const token = extractTokenFromRequest(request);
 
@@ -41,8 +42,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     console.error('Get user error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
