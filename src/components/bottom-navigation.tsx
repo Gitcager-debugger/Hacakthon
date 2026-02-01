@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, LineChart, Sparkles, User } from 'lucide-react';
+import { Home, LineChart, Sparkles, User, LogIn, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,9 +22,14 @@ const navItems = [
     icon: Sparkles,
   },
   {
-    name: 'Profile',
-    href: '/profile',
-    icon: User,
+    name: 'Login',
+    href: '/auth/login',
+    icon: LogIn,
+  },
+  {
+    name: 'Signup',
+    href: '/auth/signup',
+    icon: UserPlus,
   },
 ];
 
