@@ -22,14 +22,9 @@ const navItems = [
     icon: Sparkles,
   },
   {
-    name: 'Login',
-    href: '/auth/login',
-    icon: LogIn,
-  },
-  {
-    name: 'Signup',
-    href: '/auth/signup',
-    icon: UserPlus,
+    name: 'Profile',
+    href: '/profile',
+    icon: User,
   },
 ];
 
